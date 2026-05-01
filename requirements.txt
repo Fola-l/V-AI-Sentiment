@@ -1,0 +1,9 @@
+requests
+python-dotenv
+pandas
+vaderSentiment
+transformers
+torch
+matplotlib
+seaborn
+tqdm

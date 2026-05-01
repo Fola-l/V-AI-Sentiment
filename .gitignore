@@ -1,0 +1,11 @@
+.env
+logs/
+__pycache__/
+*.pyc
+tweets_raw.json
+tweets.csv
+processed_tweets.csv
+sentiment_theme_summary.csv
+representative_quotes.csv
+report.md
+*.png
