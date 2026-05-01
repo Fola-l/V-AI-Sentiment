@@ -22,14 +22,12 @@ Usage:
 import re
 import argparse
 from pathlib import Path
-from collections import defaultdict
 
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
-import numpy as np
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -92,7 +90,7 @@ def distinctive_terms(
 def plot_terms(terms: list[tuple[str, float]], title: str, colour: str, out_path: str):
     labels, scores = zip(*terms)
     fig, ax = plt.subplots(figsize=(9, 5))
-    bars = ax.barh(list(reversed(labels)), list(reversed(scores)), color=colour)
+    ax.barh(list(reversed(labels)), list(reversed(scores)), color=colour)
     ax.set_xlabel("TF-IDF advantage over other sentiments")
     ax.set_title(title)
     plt.tight_layout()
@@ -196,10 +194,42 @@ def main():
     print("Saved root_cause_themes.csv")
 
     # -----------------------------------------------------------------------
-    # 3. Extreme quotes — most positive and most negative
+    # 3. Extreme quotes — must contain a high-confidence on-topic phrase
     # -----------------------------------------------------------------------
-    top_pos = pos.nlargest(5, "compound")[["clean_text", "compound", "themes_str"]]
-    top_neg = neg.nsmallest(5, "compound")[["clean_text", "compound", "themes_str"]]
+    _STRONG_PHRASES = [
+        "ai answered", "bot answered", "spoke to an ai", "spoke to a bot",
+        "talking to an ai", "talking to a bot", "ai on the phone", "robot answered the phone",
+        "ai voice agent", "ai phone call", "phone bot", "voice bot",
+        "ai receptionist", "virtual receptionist",
+        "can't speak to a human", "cant speak to a human",
+        "want to speak to a real person", "want to talk to a real person",
+        "didn't know it was ai", "thought it was a human",
+        "ai pretending", "automated voice", "automated phone",
+        "speaking to a bot", "spoke to a robot", "robot on the phone",
+        "phoned and got a bot", "called and got an ai", "called and got a bot",
+        "press 0", "no option to speak to a human",
+    ]
+
+    def is_strong_match(text: str) -> bool:
+        # Phrase must appear in the first 200 chars — main topic, not buried mention
+        lower = text.lower()[:200]
+        return any(phrase in lower for phrase in _STRONG_PHRASES)
+
+    def top_quotes(subset: pd.DataFrame, n: int, ascending: bool) -> pd.DataFrame:
+        # Tier 1: strong phrase in opening 200 chars (most on-topic)
+        strong = subset[subset["clean_text"].apply(is_strong_match)]
+        # Tier 2: themed + compound not at extreme ends (avoids viral/promo noise)
+        themed = subset[
+            (subset["themes_str"] != "untagged") &
+            (subset["compound"].abs() < 0.98)
+        ]
+        pool = strong if len(strong) >= n else (themed if len(themed) >= n else subset)
+        return pool.sort_values("compound", ascending=ascending).head(n)[
+            ["clean_text", "compound", "themes_str"]
+        ]
+
+    top_pos = top_quotes(pos, 5, ascending=False)
+    top_neg = top_quotes(neg, 5, ascending=True)
     top_pos["sentiment"] = "positive"
     top_neg["sentiment"] = "negative"
     quotes_df = pd.concat([top_pos, top_neg], ignore_index=True)

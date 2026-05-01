@@ -36,25 +36,47 @@ SEARCH_URL = "https://api.twitterapi.io/twitter/tweet/advanced_search"
 OPERATORS = "-filter:replies -filter:retweets"
 
 QUERIES = [
-    '"AI customer service" (UK OR Britain OR London)',
-    '"AI voice" "customer service" (UK OR Britain OR London)',
-    '"AI receptionist" (UK OR Britain OR London)',
-    '"automated phone system" (UK OR Britain OR London)',
-    '"robot voice" "customer service"',
-    '"can\'t speak to a human"',
-    '"talking to a bot" (UK OR Britain OR London)',
+    # Exact experiential phrases — high precision, force both concepts together
     '"AI answered the phone"',
-    '"human sounding AI"',
-    '"Google Duplex"',
-    '"voice bot" (UK OR Britain OR London)',
-    '"phone bot"',
-    '"virtual receptionist" (UK OR Britain OR London)',
-    '"AI phone call"',
-    '"automated booking" (UK OR Britain OR London)',
-    '"GP appointment" (bot OR AI)',
-    'NHS (AI phone OR AI voice OR voice bot)',
-    'taxi (AI phone OR voice bot) (UK OR London)',
-    '"restaurant booking" (AI OR bot)',
+    '"AI answered my call"',
+    '"bot answered the phone"',
+    '"spoke to an AI"',
+    '"spoke to a bot"',
+    '"talking to an AI" (phone OR call OR "customer service")',
+    '"talking to a bot" (phone OR call OR "customer service")',
+    '"AI on the phone"',
+    '"robot answered"',
+    '"automated voice" (phone OR call OR system) (UK OR Britain OR London)',
+    '"AI voice agent"',
+    '"voice AI" (call OR phone OR answer OR booking)',
+
+    # Human fallback frustration — very specific to the experience
+    '"can\'t speak to a human" (phone OR call OR "customer service")',
+    '"want to speak to a real person"',
+    '"press 0" (bot OR AI OR automated)',
+    '"no option to speak" human',
+    '"just want to speak to someone"',
+
+    # Deception / realisation moments
+    '"didn\'t know it was AI"',
+    '"thought it was a human"',
+    '"didn\'t realise it was a bot"',
+    '"AI pretending to be human"',
+
+    # High-precision AI phone/booking experiences
+    '"AI phone call" (experience OR called OR phoned OR hate OR great OR weird OR creepy)',
+    '"AI receptionist" (called OR phoned OR booked OR spoke OR experience)',
+    '"virtual receptionist" (called OR phoned OR spoke OR experience) (UK OR Britain OR London)',
+    '"Google Duplex" (call OR restaurant OR booking OR phone)',
+    '"phone bot" (experience OR called OR phoned OR hate OR weird)',
+    '"voice bot" (called OR phoned OR spoke OR hate OR love OR weird) (UK OR Britain OR London)',
+
+    # UK service-specific — forced context
+    '"GP appointment" (AI OR bot OR automated) (booked OR called OR phoned OR rang)',
+    'NHS (AI OR bot OR automated) (phone OR call OR voice OR answered)',
+    '"taxi" (AI OR bot) (phone OR call OR voice OR answered) (UK OR London)',
+    '"restaurant booking" (AI OR bot) (called OR phoned OR spoke OR experience)',
+    '"AI customer service" (called OR phoned OR experience OR useless OR great OR terrible OR hate OR love)',
 ]
 
 

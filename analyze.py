@@ -72,6 +72,48 @@ def is_spam(text: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Relevance filter — tweet must be about AI voice/phone interactions
+# ---------------------------------------------------------------------------
+# A tweet is relevant if it contains at least one term from BOTH groups,
+# OR matches a high-confidence exact phrase.
+
+_AI_TERMS = [
+    "ai", "artificial intelligence", "bot", "chatbot", "automated", "automation",
+    "robot", "voice agent", "voice ai", "virtual assistant", "virtual receptionist",
+    "google duplex", "duplex",
+]
+# These must be specifically about phone/call interactions — kept tight intentionally
+_PHONE_TERMS = [
+    "phone call", "phone system", "phone line", "phone number",
+    "called", "phoned", "rang", "rung", "dialled", "dialed",
+    "picked up", "hung up", "on hold", "call centre", "call center",
+    "customer service call", "helpline", "hotline",
+    "speak to", "spoke to", "talking to", "get through",
+    "press 0", "press 1", "press 2",
+    "answered the phone", "answer the phone", "answering the phone",
+    "answered my call", "picked up the phone",
+]
+_HIGH_CONFIDENCE_PHRASES = [
+    "ai answered", "bot answered", "spoke to an ai", "spoke to a bot",
+    "talking to an ai", "talking to a bot", "ai on the phone", "robot answered",
+    "ai voice agent", "ai phone call", "phone bot", "voice bot",
+    "ai receptionist", "virtual receptionist",
+    "can't speak to a human", "cant speak to a human",
+    "want to speak to a real person", "want to talk to a real person",
+    "didn't know it was ai", "thought it was a human",
+    "ai pretending", "automated voice", "automated phone",
+]
+
+def is_relevant(text: str) -> bool:
+    lower = text.lower()
+    if any(phrase in lower for phrase in _HIGH_CONFIDENCE_PHRASES):
+        return True
+    has_ai    = any(term in lower for term in _AI_TERMS)
+    has_phone = any(term in lower for term in _PHONE_TERMS)
+    return has_ai and has_phone
+
+
+# ---------------------------------------------------------------------------
 # Sentiment: VADER
 # ---------------------------------------------------------------------------
 def vader_sentiment(texts: list[str]) -> list[dict]:
@@ -144,15 +186,17 @@ def main():
     df = load_tweets(args.input)
     print(f"  Raw rows: {len(df)}")
 
-    # 2. Clean & deduplicate
+    # 2. Clean, deduplicate & relevance filter
     df["text"] = df["text"].fillna("").astype(str)
     df = df.drop_duplicates(subset="tweet_id")
-    df = df[~df["text"].str.startswith("RT @")]  # drop retweets if any slipped through
+    df = df[~df["text"].str.startswith("RT @")]       # drop retweets
     df["clean_text"] = df["text"].apply(clean_text)
-    df = df[df["clean_text"].str.len() > 10]      # drop near-empty
+    df = df[df["clean_text"].str.len() > 10]           # drop near-empty
     df = df[~df["clean_text"].apply(is_spam)]
-    df = df.drop_duplicates(subset="clean_text")  # dedupe identical text
-    print(f"  After cleaning: {len(df)} tweets")
+    df = df.drop_duplicates(subset="clean_text")       # dedupe identical text
+    before_relevance = len(df)
+    df = df[df["clean_text"].apply(is_relevant)]       # keep only on-topic tweets
+    print(f"  After cleaning: {len(df)} tweets ({before_relevance - len(df)} removed by relevance filter)")
 
     # 3. Sentiment
     print(f"Running sentiment ({args.model}) …")
