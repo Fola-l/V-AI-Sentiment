@@ -4,6 +4,9 @@ pandas
 vaderSentiment
 transformers
 torch
+scikit-learn
 matplotlib
 seaborn
 tqdm
+fpdf2
+python-docx
